@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0c0f">
+  <meta name="description" content="Kenneth Marc Balasta's portfolio: QA engineering, software testing, test automation, and AI-powered workflow automation using tools such as Playwright, Postman, n8n, Make, and GoHighLevel.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Kenneth Marc Balasta | QA Engineering & AI Automation">
+  <meta property="og:description" content="Software quality assurance, test automation, and practical workflow automation projects.">
+  <title>Kenneth Marc Balasta | QA Engineering & AI Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0c0f;
+      --surface: #111418;
+      --surface-raised: #151a21;
+      --border: #26303c;
+      --accent: #00e5a0;
+      --accent-hover: #38f5bb;
+      --accent2: #0085ff;
+      --text: #e8edf5;
+      --muted: #a0adbf;
+      --subtle: #758196;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Sora', sans-serif;
+      --content: 1080px;
+      --radius: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    /* Ensure explicitly hidden cards stay hidden even when component CSS sets display:flex. */
+    [hidden] { display: none !important; }
+    html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.7 var(--sans); overflow-wrap: anywhere; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: linear-gradient(rgba(38,48,60,.45) 1px, transparent 1px), linear-gradient(90deg, rgba(38,48,60,.45) 1px, transparent 1px); background-size: 60px 60px; opacity: .23; }
+    a { color: var(--accent); }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .skip-link { position: absolute; top: -60px; left: 16px; z-index: 200; background: var(--accent); color: #07110d; padding: 10px 14px; border-radius: 6px; font-weight: 700; }
+    .skip-link:focus { top: 12px; }
+    .container { width: min(var(--content), calc(100% - 40px)); margin-inline: auto; }
+    .site-header { position: sticky; top: 0; z-index: 100; background: rgba(10,12,15,.91); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+    .nav-wrap { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .logo { font: 700 14px var(--mono); color: var(--accent); text-decoration: none; letter-spacing: .08em; white-space: nowrap; }
+    .nav-links { display: flex; align-items: center; gap: clamp(12px, 2.5vw, 28px); list-style: none; margin: 0; padding: 0; }
+    .nav-links a { color: var(--muted); text-decoration: none; font: 11px var(--mono); letter-spacing: .025em; transition: color .2s; }
+    .nav-links a:hover, .nav-links a:focus-visible { color: var(--accent); }
+    .menu-toggle { display: none; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; font: 12px var(--mono); }
+    .hero { min-height: min(760px, calc(100svh - 72px)); display: grid; align-items: center; padding: 88px 0 80px; }
+    .eyebrow { display: flex; align-items: center; gap: 12px; color: var(--accent); font: 11px var(--mono); letter-spacing: .17em; text-transform: uppercase; margin: 0 0 20px; }
+    .eyebrow::before { content: ''; width: 30px; height: 1px; background: currentColor; flex: 0 0 auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 900px; margin-bottom: 20px; font-size: clamp(2.55rem, 7vw, 5.5rem); font-weight: 700; line-height: 1.04; letter-spacing: -.055em; }
+    .gradient-text { background: linear-gradient(120deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero-role { margin-bottom: 18px; color: var(--muted); font: clamp(11px, 1.5vw, 14px)/1.8 var(--mono); letter-spacing: .025em; }
+    .hero-description { max-width: 700px; color: #b4bfce; font-size: clamp(15px, 2vw, 17px); line-height: 1.9; margin-bottom: 26px; }
+    .hero-stats { display: flex; flex-wrap: wrap; gap: 28px; margin: 30px 0 26px; }
+    .stat { display: grid; gap: 3px; }
+    .stat-number { color: var(--accent); font: 700 23px/1.3 var(--mono); }
+    .stat-label { color: var(--subtle); font: 10px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 30px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 99px; padding: 5px 11px; color: var(--muted); background: rgba(17,20,24,.85); font: 10px var(--mono); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); text-decoration: none; font: 11px var(--mono); transition: transform .2s, border-color .2s, background .2s; }
+    .button:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .button-primary { background: var(--accent); border-color: var(--accent); color: #06110d; font-weight: 700; }
+    .button-primary:hover { background: var(--accent-hover); }
+    .button-secondary { background: rgba(17,20,24,.75); }
+    section.content-section { padding: 78px 0; border-top: 1px solid var(--border); }
+    .section-heading { display: flex; align-items: baseline; gap: 18px; margin-bottom: 34px; }
+    .section-kicker { flex: 0 0 auto; color: var(--accent); font: 11px var(--mono); letter-spacing: .15em; text-transform: uppercase; }
+    .section-heading::after { content: ''; height: 1px; background: var(--border); flex: 1; }
+    .section-intro { max-width: 720px; color: var(--muted); margin: -18px 0 30px; }
+    .category-heading { margin: 42px 0 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .category-heading h3 { font-size: 20px; margin: 0; }
+    .category-heading p { color: var(--subtle); font-size: 12px; margin: 0; }
+    .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .project-card, .skill-card, .contact-card, .education-card { min-width: 0; border: 1px solid var(--border); background: rgba(17,20,24,.94); border-radius: var(--radius); }
+    .project-card { display: flex; flex-direction: column; padding: 25px; transition: border-color .2s, transform .2s; }
+    .project-card:hover { border-color: #3d596f; transform: translateY(-2px); }
+    .project-topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+    .project-type { color: var(--accent); font: 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .project-status { border: 1px solid var(--border); border-radius: 99px; padding: 3px 8px; color: var(--muted); font: 9px var(--mono); }
+    .project-status.in-progress { border-color: rgba(0,133,255,.45); color: #83bdff; }
+    .project-card h4 { font-size: 19px; line-height: 1.4; margin: 0 0 9px; }
+    .project-summary { color: #b2bdcc; font-size: 13px; margin-bottom: 18px; }
+    .project-detail { margin-bottom: 17px; }
+    .project-detail h5 { color: var(--subtle); font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 7px; }
+    .project-detail p, .project-detail ul { color: var(--muted); font-size: 12px; margin: 0; }
+    .project-detail ul { padding-left: 18px; display: grid; gap: 5px; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 14px; }
+    .tag { border: 1px solid rgba(0,229,160,.18); border-radius: 4px; padding: 4px 8px; background: rgba(0,229,160,.055); color: #c8f7e6; font: 10px var(--mono); }
+    .project-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 17px; }
+    .project-links a { font: 10px var(--mono); text-decoration: none; }
+    .project-links a:hover { text-decoration: underline; }
+    .experience-list { display: grid; gap: 0; }
+    .experience-item { display: grid; grid-template-columns: 190px minmax(0,1fr); gap: 28px; padding: 0 0 35px; margin-bottom: 35px; border-bottom: 1px solid var(--border); }
+    .experience-item:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+    .experience-meta { color: var(--subtle); font: 11px/1.8 var(--mono); }
+    .experience-badge { display: inline-block; margin: 7px 0; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: 10px; }
+    .experience-badge.active { border-color: rgba(0,229,160,.28); color: var(--accent); }
+    .experience-location { display: block; }
+    .experience-item h3 { margin: 0 0 3px; font-size: 18px; }
+    .company { color: var(--accent); font: 12px var(--mono); margin-bottom: 14px; }
+    .bullet-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .bullet-list li { position: relative; padding-left: 19px; color: var(--muted); font-size: 13px; }
+    .bullet-list li::before { content: '▹'; position: absolute; left: 0; top: 0; color: var(--accent); }
+    .skills-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+    .skill-card { padding: 21px; }
+    .skill-card h3 { color: var(--subtle); font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 13px; }
+    .skill-card p { color: var(--muted); font-size: 12px; margin: 14px 0 0; }
+    .education-card { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding: 24px; }
+    .education-card h3 { margin: 0 0 6px; font-size: 17px; }
+    .education-school { color: var(--accent); font: 12px var(--mono); margin-bottom: 4px; }
+    .education-location, .education-year { color: var(--subtle); font-size: 12px; }
+    .education-year { font-family: var(--mono); }
+    .contact-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 13px; }
+    .contact-card { display: flex; align-items: center; gap: 13px; padding: 18px; text-decoration: none; color: var(--text); transition: border-color .2s, transform .2s; }
+    .contact-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .contact-icon { font-size: 20px; }
+    .contact-label { display: block; color: var(--subtle); font: 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .contact-value { display: block; font-size: 12px; overflow-wrap: anywhere; }
+    footer { border-top: 1px solid var(--border); padding: 25px 0; text-align: center; color: var(--subtle); font: 10px var(--mono); }
+    .reveal { animation: fade-up .55s ease both; }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 800px) {
+      .nav-wrap { min-height: 66px; }
+      .menu-toggle { display: inline-flex; }
+      .nav-links { display: none; position: absolute; top: 65px; left: 0; right: 0; padding: 18px 22px 22px; background: rgba(10,12,15,.98); border-bottom: 1px solid var(--border); flex-direction: column; align-items: flex-start; gap: 18px; }
+      .nav-links.open { display: flex; }
+      .nav-links a { font-size: 12px; }
+      .hero { min-height: auto; padding: 78px 0 68px; }
+      .project-grid { grid-template-columns: 1fr; }
+      .skills-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .contact-grid { grid-template-columns: 1fr 1fr; }
+      .experience-item { grid-template-columns: 150px minmax(0,1fr); gap: 20px; }
+    }
+    @media (max-width: 560px) {
+      .container { width: min(100% - 30px, var(--content)); }
+      section.content-section { padding: 58px 0; }
+      .hero { padding: 62px 0 56px; }
+      .hero-stats { gap: 20px 25px; }
+      .stat-number { font-size: 20px; }
+      .experience-item { grid-template-columns: 1fr; gap: 10px; padding-bottom: 27px; margin-bottom: 27px; }
+      .experience-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+      .experience-badge { margin: 0; }
+      .experience-location { width: 100%; }
+      .skills-grid, .contact-grid { grid-template-columns: 1fr; }
+      .project-card { padding: 20px; }
+      .education-card { align-items: flex-start; }
+      .section-heading { gap: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="logo" href="#home" aria-label="Kenneth Balasta, home">KB_</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">Menu ☰</button>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" id="primary-navigation">
+          <li><a href="#about">About</a></li>
+          <li><a href="#qa-projects">QA Projects</a></li>
+          <li><a href="#automation-projects">AI Automation</a></li>
+          <li><a href="#experience">Experience</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="home" aria-labelledby="hero-title">
+      <div class="container">
+        <p class="eyebrow">QA Engineering × AI Automation</p>
+        <h1 id="hero-title">Building reliable software and <span class="gradient-text">smarter workflows.</span></h1>
+        <p class="hero-role">QUALITY ASSURANCE · TEST AUTOMATION · WORKFLOW AUTOMATION</p>
+        <p class="hero-description">I'm Kenneth Marc Balasta, a Computer Science student with hands-on QA experience and a growing focus on AI-powered workflow automation. I test software, investigate issues, automate repeatable checks, and build workflows designed to make everyday processes more reliable.</p>
+        <div class="hero-stats" aria-label="Selected QA experience highlights">
+          <div class="stat"><span class="stat-number">90+</span><span class="stat-label">Test cases tracked</span></div>
+          <div class="stat"><span class="stat-number">59%</span><span class="stat-label">Regression testing reduction*</span></div>
+          <div class="stat"><span class="stat-number">30+</span><span class="stat-label">Bugs reported</span></div>
+        </div>
+        <div class="status-row">
+          <span class="pill"><span class="dot" aria-hidden="true"></span> Open to internships & entry-level roles</span>
+          <span class="pill">⌖ Sto. Domingo, Albay, Philippines</span>
+          <span class="pill">BS Computer Science</span>
+        </div>
+        <div class="button-row">
+          <a class="button button-primary" href="#qa-projects">Explore QA Projects <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary" href="#automation-projects">Explore AI Automation <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary" href="mailto:kmarcbal@gmail.com">Contact Me ↗</a>
+        </div>
+        <p style="color:var(--subtle);font-size:10px;margin:17px 0 0;">*Reported reduction in manual regression testing at ClawGTM. Individual results are described in the experience section below.</p>
+      </div>
+    </section>
+
+    <section class="content-section" id="about" aria-labelledby="about-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">01 / About</span></div>
+        <h2 id="about-heading" style="font-size:clamp(24px,4vw,34px);max-width:760px;line-height:1.35;">Quality-minded engineering, applied to both software testing and automation.</h2>
+        <p class="section-intro">My QA work has included manual and exploratory testing, Playwright automation, API validation, performance testing, and CI/CD. Alongside that, I'm developing workflow automations that connect data sources, notifications, and business processes. I value clear documentation, useful error handling, and results that can be demonstrated.</p>
+      </div>
+    </section>
+
+    <section class="content-section" id="projects" aria-labelledby="projects-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">02 / Projects</span></div>
+        <h2 id="projects-heading" style="font-size:clamp(25px,4vw,36px);margin-bottom:10px;">Selected work</h2>
+        <p class="section-intro">Explore projects by focus area. Project descriptions distinguish documented experience from workflows that are still being developed.</p>
+
+        <div id="qa-projects" class="category-heading"><h3>QA Engineering</h3><p>Testing · Automation · Quality</p></div>
+        <div class="project-grid">
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">Test automation</span><span class="project-status">Experience project</span></div>
+            <h4>Playwright Test Automation Framework</h4>
+            <p class="project-summary">A browser test automation framework built during a QA internship to make regression checks more repeatable.</p>
+            <div class="project-detail"><h5>Approach</h5><ul><li>Built a Playwright and TypeScript framework using the Page Object Model.</li><li>Covered 80+ test cases across key application modules.</li><li>Connected automated checks to GitHub Actions CI/CD pipelines.</li></ul></div>
+            <div class="project-detail"><h5>Reported outcome</h5><p>Reduced manual regression testing by 40% across mission-critical modules during the internship.</p></div>
+            <div class="tag-list"><span class="tag">Playwright</span><span class="tag">TypeScript</span><span class="tag">POM</span><span class="tag">GitHub Actions</span></div>
+          </article>
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">API & performance testing</span><span class="project-status">Experience project</span></div>
+            <h4>API Validation & Load Testing</h4>
+            <p class="project-summary">API and performance testing work focused on endpoint behavior, service responsiveness, and issue investigation.</p>
+            <div class="project-detail"><h5>Approach</h5><ul><li>Performed API testing and network analysis with Postman.</li><li>Conducted JMeter performance testing across 34 endpoints with 100 concurrent users.</li><li>Used findings to investigate backend latency and improve bug report detail.</li></ul></div>
+            <div class="tag-list"><span class="tag">Postman</span><span class="tag">JMeter</span><span class="tag">API Testing</span><span class="tag">Performance</span></div>
+          </article>
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">Mobile & exploratory QA</span><span class="project-status">Experience project</span></div>
+            <h4>Sneaker Vault</h4>
+            <p class="project-summary">Manual and exploratory testing for a sneaker e-commerce mobile application.</p>
+            <div class="project-detail"><h5>Work completed</h5><ul><li>Tested application flows and edge cases.</li><li>Identified bugs and provided UI/UX recommendations.</li><li>Documented findings and reported issues to support functional consistency.</li></ul></div>
+            <div class="tag-list"><span class="tag">Manual QA</span><span class="tag">Exploratory Testing</span><span class="tag">Bug Reporting</span></div>
+          </article>
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">Test documentation</span><span class="project-status">Experience project</span></div>
+            <h4>Regression & Functional Testing</h4>
+            <p class="project-summary">Testing work across web applications, a Chrome extension, and e-commerce experiences.</p>
+            <div class="project-detail"><h5>Work completed</h5><ul><li>Performed manual regression testing across 80+ test cases for new Chrome extension builds at TravelArrow.</li><li>Tested XSplit Beta & Live Sites and Bug Mart e-commerce at Yenprovement.</li><li>Created test plans, test cases, and structured bug reports.</li></ul></div>
+            <div class="tag-list"><span class="tag">Regression</span><span class="tag">Functional QA</span><span class="tag">Google Sheets</span><span class="tag">Trello</span></div>
+          </article>
+        </div>
+
+        <div id="automation-projects" class="category-heading"><h3>AI & Workflow Automation</h3><p>Integrations · Notifications · Business workflows</p></div>
+        <div class="project-grid">
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">Workflow automation</span><span class="project-status">Portfolio project</span></div>
+            <h4>Veterinary Vaccine Reminder System</h4>
+            <p class="project-summary">An n8n workflow concept for helping a veterinary clinic track pet vaccine due dates and send timely reminders.</p>
+            <div class="project-detail"><h5>Workflow</h5><ul><li>Reads pet records from Google Sheets and validates required data.</li><li>Calculates reminder dates and sends emails 30 days before, 7 days before, on the due date, and 7 days overdue.</li><li>Logs invalid records and send activity, with Slack alerts for workflow failures.</li><li>Uses fake data and a test mode that routes emails to a single inbox.</li></ul></div>
+            <div class="project-detail"><h5>Design focus</h5><p>Scheduled processing, data validation, traceable logs, controlled testing, and failure notifications.</p></div>
+            <div class="tag-list"><span class="tag">n8n</span><span class="tag">Google Sheets</span><span class="tag">Email</span><span class="tag">Slack</span></div>
+          </article>
+          <article class="project-card">
+            <div class="project-topline"><span class="project-type">CRM automation</span><span class="project-status">Project overview</span></div>
+            <h4>Lead-to-Client Automation System</h4>
+            <p class="project-summary">A GoHighLevel-focused project exploring how CRM automation can support lead management and follow-up processes.</p>
+            <div class="project-detail"><h5>Focus</h5><ul><li>Organizing lead information and stages in a CRM workflow.</li><li>Reducing repetitive manual follow-up through automation.</li><li>Making lead progression easier to track.</li></ul></div>
+            <div class="project-detail"><h5>Portfolio note</h5><p>Detailed workflow steps, integrations, and outcome metrics can be added when the final implementation and evidence are available.</p></div>
+            <div class="tag-list"><span class="tag">GoHighLevel</span><span class="tag">CRM</span><span class="tag">Lead Management</span></div>
+          </article>
+          <article class="project-card" hidden>
+            <div class="project-topline"><span class="project-type">AI-assisted support</span><span class="project-status in-progress">In progress</span></div>
+            <h4>AI Customer Support & Ticket Resolution</h4>
+            <p class="project-summary">A Make-based portfolio workflow being developed to demonstrate a structured approach to incoming support tickets.</p>
+            <div class="project-detail"><h5>Planned workflow</h5><ul><li>Accept test tickets through a webhook, with Postman used to simulate website submissions during development.</li><li>Validate ticket data and classify the issue using an AI API.</li><li>Route cases based on category and confidence, with uncertain or sensitive cases sent for human review.</li><li>Log ticket outcomes and handle workflow errors.</li></ul></div>
+            <div class="project-detail"><h5>Status</h5><p>This project is marked in progress. The planned workflow is not presented as a completed or production-deployed system.</p></div>
+            <div class="tag-list"><span class="tag">Make</span><span class="tag">Webhooks</span><span class="tag">HTTP / APIs</span><span class="tag">Postman</span><span class="tag">AI API</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="experience" aria-labelledby="experience-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">03 / Experience</span></div>
+        <h2 id="experience-heading" style="font-size:clamp(25px,4vw,36px);margin-bottom:32px;">QA experience</h2>
+        <div class="experience-list">
+          <article class="experience-item">
+            <div class="experience-meta"><time datetime="2026-03">03/2026</time> – Present<br><span class="experience-badge active">Active</span><span class="experience-location">Remote · Part-time</span></div>
+            <div><h3>QA Tester</h3><div class="company">ClawGTM</div><ul class="bullet-list"><li>Created and documented test cases covering application features, tracking 90+ test cases throughout the testing cycle.</li><li>Conducted live sessions to monitor real-time user bugs and experiences, reporting 30+ bugs and 10+ UX improvement recommendations.</li><li>Automated transactional test cases to reduce manual regression testing by 59%, and handled client inquiries through Intercom.</li></ul></div>
+          </article>
+          <article class="experience-item">
+            <div class="experience-meta"><time datetime="2026-03">03/2026</time> – Present<br><span class="experience-badge active">Active</span><span class="experience-location">Remote · Part-time</span></div>
+            <div><h3>QA Tester</h3><div class="company">TravelArrow</div><ul class="bullet-list"><li>Performed manual regression testing across 80+ test cases for each new build, installing updated Chrome extension versions to validate functionality and stability.</li><li>Reported bugs and UX improvements to the development team throughout the testing cycle.</li></ul></div>
+          </article>
+          <article class="experience-item">
+            <div class="experience-meta">11/2025 – 02/2026<br><span class="experience-badge">Internship</span><span class="experience-location">Remote</span></div>
+            <div><h3>Quality Assurance Associate</h3><div class="company">Raykan Technologies</div><ul class="bullet-list"><li>Built a Playwright (TypeScript) automation framework from scratch using the Page Object Model (POM), covering 80+ test cases and reducing manual regression by 40% across mission-critical modules.</li><li>Built CI/CD pipelines using GitHub Actions and conducted JMeter performance testing across 34 endpoints with 100 concurrent users.</li><li>Participated in bug lifecycle activities in Azure DevOps alongside the QA team, performing manual, exploratory, and sanity testing.</li><li>Executed API testing and network analysis via Postman to investigate backend latency issues and improve bug reporting accuracy.</li></ul></div>
+          </article>
+          <article class="experience-item">
+            <div class="experience-meta">09/2025 – 10/2025<br><span class="experience-badge">Freelance</span><span class="experience-location">Remote</span></div>
+            <div><h3>Freelance QA Manual Tester</h3><div class="company">Yenprovement</div><ul class="bullet-list"><li>Conducted manual, exploratory, functional, and regression testing for XSplit Beta &amp; Live Sites and Bug Mart e-commerce.</li><li>Developed and executed test plans, test cases, and test scripts, producing structured bug reports throughout the testing cycle.</li><li>Managed testing documentation using Google Sheets, Google Docs, and Trello.</li></ul></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="skills" aria-labelledby="skills-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">04 / Technical Skills</span></div>
+        <h2 id="skills-heading" style="font-size:clamp(25px,4vw,36px);margin-bottom:10px;">Tools & technologies</h2>
+        <p class="section-intro">Grouped by how I use them across QA engineering, development, and automation projects.</p>
+        <div class="skills-grid">
+          <div class="skill-card"><h3>QA & Test Automation</h3><div class="tag-list"><span class="tag">Playwright</span><span class="tag">Selenium</span><span class="tag">Manual QA</span><span class="tag">Exploratory</span><span class="tag">Regression</span><span class="tag">POM</span></div></div>
+          <div class="skill-card"><h3>AI & Workflow Automation</h3><div class="tag-list"><span class="tag">n8n</span><span class="tag">Make</span><span class="tag">GoHighLevel</span><span class="tag">Workflow Design</span><span class="tag">AI API Concepts</span></div><p>Hands-on project work and developing workflows; not all tools represent production experience.</p></div>
+          <div class="skill-card"><h3>API & Performance</h3><div class="tag-list"><span class="tag">Postman</span><span class="tag">REST APIs</span><span class="tag">JMeter</span><span class="tag">BlazeMeter</span><span class="tag">Network Analysis</span></div></div>
+          <div class="skill-card"><h3>Programming & Data</h3><div class="tag-list"><span class="tag">JavaScript</span><span class="tag">TypeScript</span><span class="tag">Python</span><span class="tag">SQL</span><span class="tag">HTML</span><span class="tag">CSS</span></div></div>
+          <div class="skill-card"><h3>DevOps & Collaboration</h3><div class="tag-list"><span class="tag">Git</span><span class="tag">GitHub</span><span class="tag">GitHub Actions</span><span class="tag">Azure DevOps</span><span class="tag">Trello</span><span class="tag">Microsoft Teams</span></div></div>
+          <div class="skill-card"><h3>Documentation & Support</h3><div class="tag-list"><span class="tag">Google Sheets</span><span class="tag">Google Docs</span><span class="tag">Intercom</span><span class="tag">Test Plans</span><span class="tag">Bug Reports</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="education" aria-labelledby="education-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">05 / Education</span></div>
+        <div class="education-card"><div><h3 id="education-heading">Bachelor of Science in Computer Science</h3><div class="education-school">Bicol University Polangui Campus</div><div class="education-location">Polangui, Albay, Philippines</div></div><div class="education-year">2022 – Present</div></div>
+      </div>
+    </section>
+
+    <section class="content-section" id="contact" aria-labelledby="contact-heading">
+      <div class="container">
+        <div class="section-heading"><span class="section-kicker">06 / Contact</span></div>
+        <h2 id="contact-heading" style="font-size:clamp(25px,4vw,36px);margin-bottom:12px;">Let's connect</h2>
+        <p class="section-intro">I'm open to QA, software testing, and AI/workflow automation internship or entry-level opportunities.</p>
+        <div class="contact-grid">
+          <a class="contact-card" href="mailto:kmarcbal@gmail.com"><span class="contact-icon" aria-hidden="true">✉</span><span><span class="contact-label">Email</span><span class="contact-value">kmarcbal@gmail.com</span></span></a>
+          <a class="contact-card" href="https://linkedin.com/in/kenneth-marc-balasta-b32a39332" target="_blank" rel="noopener noreferrer"><span class="contact-icon" aria-hidden="true">↗</span><span><span class="contact-label">LinkedIn</span><span class="contact-value">kenneth-marc-balasta</span></span></a>
+          <a class="contact-card" href="https://github.com/Kenmbal" target="_blank" rel="noopener noreferrer"><span class="contact-icon" aria-hidden="true">⌘</span><span><span class="contact-label">GitHub</span><span class="contact-value">Kenmbal</span></span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="container">Built with care · Kenneth Marc Balasta · <span id="year">2026</span></div></footer>
+  <script>
+    (() => {
+      const toggle = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('#primary-navigation');
+      if (toggle && nav) {
+        toggle.addEventListener('click', () => {
+          const isOpen = nav.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', String(isOpen));
+          toggle.textContent = isOpen ? 'Close ✕' : 'Menu ☰';
+        });
+        nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+          nav.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.textContent = 'Menu ☰';
+        }));
+      }
+      const year = document.querySelector('#year');
+      if (year) year.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

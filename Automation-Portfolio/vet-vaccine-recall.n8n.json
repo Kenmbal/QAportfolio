@@ -1,0 +1,653 @@
+{
+  "name": "Vet Clinic - Vaccine Recall Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1. INTAKE\nDaily schedule reads the clinic's exported pet records (Google Sheet).",
+        "height": 360,
+        "width": 520,
+        "color": 4
+      },
+      "id": "eb85ed17-a07d-4029-85f1-8c1e42242783",
+      "name": "S1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. CLEAN & VALIDATE\nValidate emails and dates, compute next vaccine due date, flag milestone days. Bad rows go to the log.",
+        "height": 360,
+        "width": 520,
+        "color": 5
+      },
+      "id": "c13b0e51-1e42-4ed5-978b-281d886f0ea1",
+      "name": "S2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. MILESTONE ROUTING\n30 days / 7 days / due today / 7 days overdue get a reminder. Everything else is skipped.",
+        "height": 520,
+        "width": 520,
+        "color": 6
+      },
+      "id": "3f807a71-a982-4bcf-a8e7-9847b4c16fef",
+      "name": "S3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. SEND RECALL\nDraft a personalized email and send it (test mode redirects to your own inbox).",
+        "height": 360,
+        "width": 520,
+        "color": 7
+      },
+      "id": "d64cad68-8f02-4e52-9bcc-a61390accb0c",
+      "name": "S4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. RELIABILITY & LOGGING\nEvery run is logged. Failures alert Slack. Crash handler catches anything else.",
+        "height": 520,
+        "width": 900,
+        "color": 3
+      },
+      "id": "b877d323-8fa3-4616-9e53-f46961b2880e",
+      "name": "S5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "id": "ed942875-06d6-4b8d-aaaa-08192b3c3c93",
+      "name": "Daily 6AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        60,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Clinic Export"
+        },
+        "options": {}
+      },
+      "id": "9819f71f-2a8a-4c26-a294-4814a032d7c9",
+      "name": "Read Clinic Export",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize + validate each pet row from the clinic export (FAKE demo data only)\nconst VACCINE_INTERVAL_DAYS = 365;   // annual booster in this demo\nconst today = new Date(); today.setHours(0, 0, 0, 0);\n\nreturn $input.all().map(({ json: r }) => {\n  const email = String(r.owner_email || '').trim().toLowerCase();\n  const last  = new Date(r.last_vaccine_date);\n  const validDate  = !isNaN(last);\n  const validEmail = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n\n  let nextDue = '', daysUntilDue = null, bucket = 'invalid';\n  if (validDate) {\n    const d = new Date(last);\n    d.setDate(d.getDate() + VACCINE_INTERVAL_DAYS);\n    nextDue = d.toISOString().slice(0, 10);\n    daysUntilDue = Math.round((d - today) / 86400000);\n\n    // Stateless dedupe: only act on exact milestone days, so the daily run\n    // never sends the same reminder twice. (Workflow must run every day.)\n    bucket = daysUntilDue === 30 ? 'due30'\n           : daysUntilDue === 7  ? 'due7'\n           : daysUntilDue === 0  ? 'dueToday'\n           : daysUntilDue === -7 ? 'overdue7'\n           : 'skip';\n  }\n  const valid = validDate && validEmail;\n  return { json: { ...r, email, nextDue, daysUntilDue, bucket, valid,\n                   reason: valid ? '' : 'bad vaccine date or invalid email' } };\n});"
+      },
+      "id": "b1f76c5f-ab94-490d-85a3-89480530e70b",
+      "name": "Normalize & Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "107813d2-2729-4daa-b3f1-0e92cef563c3",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d0ab022a-eaf1-47a1-b76f-d105d08684bb",
+      "name": "Valid Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "INVALID",
+            "email": "={{ $json.email }}",
+            "detail": "={{ $json.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "f46c345d-a9df-4212-bf90-b163787e6bb4",
+      "name": "Log Invalid Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "6b00c2a7-5433-41ac-9033-dbecd76804f9",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "due30",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Due in 30d"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "1dcc89f2-8e92-496f-8e3e-9f5bf18a15dc",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "due7",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Due in 7d"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "65b015d0-a9ea-4c1a-a9a3-1f6ec195191c",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "dueToday",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Due today"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "7ce11535-5db0-42e6-9cbf-5e861747a9e3",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "overdue7",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Overdue 7d"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "5d965497-414b-44a6-b359-6fef95bd1a2b",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "skip",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3d732541-71d2-4e93-b1d5-9b31b2d77e14",
+      "name": "Route by Milestone",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1180,
+        120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e55d6d0b-1576-4dd8-ab98-8c07d6c2f257",
+      "name": "Skip - Not a Milestone",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Draft the recall email for each pet.\nconst CLINIC       = 'Happy Paws Vet Clinic (DEMO)';\nconst BOOKING_LINK = 'https://example.com/book';\nconst TEST_MODE    = true;                      // keep true until a real client signs off\nconst TEST_EMAIL   = 'you+vettest@example.com'; // all demo emails go here in test mode\n\nconst copy = {\n  due30:    (p) => ({ subject: `${p.pet_name}'s vaccine is due in 30 days`,\n                      line: `${p.pet_name}'s annual vaccine is due on ${p.nextDue}.` }),\n  due7:     (p) => ({ subject: `Reminder: ${p.pet_name}'s vaccine is due next week`,\n                      line: `Just a reminder that ${p.pet_name}'s vaccine is due on ${p.nextDue}.` }),\n  dueToday: (p) => ({ subject: `${p.pet_name}'s vaccine is due today`,\n                      line: `${p.pet_name}'s vaccine is due today.` }),\n  overdue7: (p) => ({ subject: `${p.pet_name}'s vaccine is now overdue`,\n                      line: `${p.pet_name}'s vaccine was due on ${p.nextDue}. Let's get it done soon.` }),\n};\n\nreturn $input.all().map(({ json: r }) => {\n  const c = copy[r.bucket](r);\n  return { json: {\n    to: TEST_MODE ? TEST_EMAIL : r.email,\n    subject: c.subject,\n    body: `Hi ${r.owner_first_name},\\n\\n${c.line}\\n\\nBook a visit here: ${BOOKING_LINK}\\n\\n- ${CLINIC}`,\n    pet: r.pet_name,\n    bucket: r.bucket\n  }};\n});"
+      },
+      "id": "424803e2-0bb9-49a9-9104-ed12bba98e91",
+      "name": "Build Recall Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "48bb14c1-c023-41c0-a1fd-700fca4c7bc2",
+      "name": "Send Recall Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1760,
+        140
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "SENT",
+            "email": "={{ $('Build Recall Message').item.json.to }}",
+            "detail": "={{ $('Build Recall Message').item.json.pet + ' / ' + $('Build Recall Message').item.json.bucket }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "b056ae9c-9ee2-4c6d-94b3-f61520b37b14",
+      "name": "Log Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2040,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "FAILED",
+            "email": "",
+            "detail": "={{ $json.error?.message || 'Gmail send error' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "57720b7d-1bcf-43c8-8182-0308f048ca4e",
+      "name": "Log Failed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2040,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#vet-ops-alerts"
+        },
+        "text": "=⚠️ Vet recall: an email failed to send. Check the Run Log sheet. {{ $json.detail }}",
+        "otherOptions": {}
+      },
+      "id": "562831fc-378e-4a18-8544-8e2ef5de6149",
+      "name": "Slack - Send Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2320,
+        460
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a44a1fe0-26fd-4bae-995b-b2e07e72fc1d",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#vet-ops-alerts"
+        },
+        "text": "=🚨 Workflow crashed: {{ $json.workflow.name }} at node {{ $json.execution.lastNodeExecuted }}. Error: {{ $json.execution.error.message }}",
+        "otherOptions": {}
+      },
+      "id": "ec97fc59-6e42-4535-a10c-15407a7f2cb7",
+      "name": "Slack - Workflow Crashed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2040,
+        720
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 6AM": {
+      "main": [
+        [
+          {
+            "node": "Read Clinic Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Clinic Export": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Validate": {
+      "main": [
+        [
+          {
+            "node": "Valid Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Row?": {
+      "main": [
+        [
+          {
+            "node": "Route by Milestone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Milestone": {
+      "main": [
+        [
+          {
+            "node": "Build Recall Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Recall Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Recall Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Recall Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip - Not a Milestone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Recall Message": {
+      "main": [
+        [
+          {
+            "node": "Send Recall Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Recall Email": {
+      "main": [
+        [
+          {
+            "node": "Log Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Failed": {
+      "main": [
+        [
+          {
+            "node": "Slack - Send Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack - Workflow Crashed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

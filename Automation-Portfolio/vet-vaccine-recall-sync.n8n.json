@@ -1,0 +1,633 @@
+{
+  "name": "Vet Clinic - Vaccine Recall Sync (GHL)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1. INTAKE\nDaily schedule reads the clinic's exported pet records (Google Sheet).",
+        "height": 360,
+        "width": 520,
+        "color": 4
+      },
+      "id": "5f6db09c-3f19-420b-a8e4-5644c6bce1f3",
+      "name": "S1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. CLEAN & VALIDATE\nNormalize phones, compute next vaccine due date, bucket each pet. Bad rows go to the log, not GHL.",
+        "height": 360,
+        "width": 520,
+        "color": 5
+      },
+      "id": "03324b45-f738-4fa7-8607-533f4217dff1",
+      "name": "S2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. DUE-DATE ROUTING\nOverdue / due in 7d / due in 30d are synced. Not-due pets are skipped.",
+        "height": 520,
+        "width": 520,
+        "color": 6
+      },
+      "id": "6473d85c-f28c-4c30-97cf-7001825d8eaa",
+      "name": "S3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. GHL SYNC\nUpsert contact + tags via API. GHL workflows (triggered by tags) send the recall SMS/email.",
+        "height": 360,
+        "width": 520,
+        "color": 7
+      },
+      "id": "c8b9d50f-82dc-40c4-b1f9-d844b0aab9f7",
+      "name": "S4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. RELIABILITY & LOGGING\nEvery run is logged. Failures alert Slack. Crash handler catches anything else.",
+        "height": 520,
+        "width": 900,
+        "color": 3
+      },
+      "id": "e8a0a6b3-1e8e-41cc-ac44-01d450b5eb1d",
+      "name": "S5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "id": "7ea8cee2-ec9d-4af0-86d7-891c05a5df02",
+      "name": "Daily 6AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        60,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Clinic Export"
+        },
+        "options": {}
+      },
+      "id": "ee54a1f3-441d-4adf-a1bb-3d4264cb3c23",
+      "name": "Read Clinic Export",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize + validate each pet row from the clinic export (FAKE demo data only)\nconst COUNTRY_CODE = '+63';          // change per client (+1 for US)\nconst VACCINE_INTERVAL_DAYS = 365;   // annual booster in this demo\nconst today = new Date(); today.setHours(0, 0, 0, 0);\n\nreturn $input.all().map(({ json: r }) => {\n  const digits = String(r.owner_phone || '').replace(/\\D/g, '');\n  const phone  = digits.length >= 10 ? COUNTRY_CODE + digits.slice(-10) : '';\n  const email  = String(r.owner_email || '').trim().toLowerCase();\n  const last   = new Date(r.last_vaccine_date);\n  const validDate = !isNaN(last);\n\n  let nextDue = '', daysUntilDue = null, bucket = 'invalid';\n  if (validDate) {\n    const d = new Date(last);\n    d.setDate(d.getDate() + VACCINE_INTERVAL_DAYS);\n    nextDue = d.toISOString().slice(0, 10);\n    daysUntilDue = Math.round((d - today) / 86400000);\n    bucket = daysUntilDue < 0 ? 'overdue'\n           : daysUntilDue <= 7 ? 'due7'\n           : daysUntilDue <= 30 ? 'due30' : 'ok';\n  }\n  const hasContact = Boolean(phone) || /.+@.+\\..+/.test(email);\n  const valid = validDate && hasContact;\n\n  return { json: { ...r, phone, email, nextDue, daysUntilDue, bucket, valid,\n                   reason: valid ? '' : 'bad date or no usable phone/email' } };\n});"
+      },
+      "id": "5b90a3ee-9f7e-4e86-8042-c5a2455188df",
+      "name": "Normalize & Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "8bfc02d1-58b5-45e9-b51a-1ab322bd109c",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c79eab3a-8fc3-42b7-869a-55c1fc862180",
+      "name": "Valid Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "INVALID",
+            "email": "={{ $json.email }}",
+            "detail": "={{ $json.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "7c7093b5-173c-40e3-bee3-c8c016882d1e",
+      "name": "Log Invalid Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "be1d175f-22b4-437f-9d9f-b46316fbb9dd",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "overdue",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Overdue"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "3f8632fd-cb50-4371-be11-ca32403e32e6",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "due7",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Due in 7d"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "8ff50c17-12d2-4f8a-aaab-05a51227fcc6",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "due30",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Due in 30d"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "2c192cf0-4210-4254-81ca-e76ad84ecfbb",
+                    "leftValue": "={{ $json.bucket }}",
+                    "rightValue": "ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not Due"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d2f80648-99c7-4ebf-a7a1-ec69f8e408fa",
+      "name": "Route by Due Bucket",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1180,
+        120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c0c1a571-45a6-40e9-a44f-84f1d05e826c",
+      "name": "Skip - Not Due",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the GHL contact-upsert body. Tags drive the GHL recall workflows.\nconst LOCATION_ID = 'YOUR_GHL_LOCATION_ID';\nconst tagByBucket = {\n  overdue: 'vaccine-overdue',\n  due7:    'vaccine-due-7d',\n  due30:   'vaccine-due-30d',\n};\n\nreturn $input.all().map(({ json: r }) => ({\n  json: {\n    locationId: LOCATION_ID,\n    firstName: r.owner_first_name,\n    lastName:  r.owner_last_name,\n    email: r.email,\n    phone: r.phone,\n    tags: ['vet-recall', tagByBucket[r.bucket]],\n    customFields: [\n      { key: 'pet_name',         field_value: r.pet_name },\n      { key: 'pet_species',      field_value: r.species },\n      { key: 'next_vaccine_due', field_value: r.nextDue }\n    ]\n  }\n}));"
+      },
+      "id": "03728115-0012-4096-8c5d-76d08d787c0e",
+      "name": "Build GHL Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/contacts/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "9f755471-709d-4bab-a257-01b2846d6d72",
+      "name": "Upsert Contact in GHL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        140
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "SYNCED",
+            "email": "={{ $json.contact?.email }}",
+            "detail": "={{ $json.contact?.id }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "bf299296-5eaf-4281-90c2-55abe48f590c",
+      "name": "Log Synced",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2040,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Run Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "status": "FAILED",
+            "email": "",
+            "detail": "={{ $json.error?.message || 'GHL API error' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "d6adc614-9db4-4160-8b41-8a24a859cbde",
+      "name": "Log Failed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2040,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#vet-ops-alerts"
+        },
+        "text": "=⚠️ Vet recall sync: a contact failed to upsert in GHL. Check the Run Log sheet. {{ $json.detail }}",
+        "otherOptions": {}
+      },
+      "id": "eb9ae9ba-4f38-49b6-b3aa-5ff6c627a0af",
+      "name": "Slack - Sync Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2320,
+        460
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "643688ea-e9e4-41d7-80fe-296b80333f77",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#vet-ops-alerts"
+        },
+        "text": "=🚨 Workflow crashed: {{ $json.workflow.name }} at node {{ $json.execution.lastNodeExecuted }}. Error: {{ $json.execution.error.message }}",
+        "otherOptions": {}
+      },
+      "id": "43b7304f-879e-4574-a730-5247d9079bbe",
+      "name": "Slack - Workflow Crashed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2040,
+        720
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 6AM": {
+      "main": [
+        [
+          {
+            "node": "Read Clinic Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Clinic Export": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Validate": {
+      "main": [
+        [
+          {
+            "node": "Valid Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Row?": {
+      "main": [
+        [
+          {
+            "node": "Route by Due Bucket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Due Bucket": {
+      "main": [
+        [
+          {
+            "node": "Build GHL Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build GHL Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build GHL Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip - Not Due",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build GHL Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Contact in GHL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Contact in GHL": {
+      "main": [
+        [
+          {
+            "node": "Log Synced",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Failed": {
+      "main": [
+        [
+          {
+            "node": "Slack - Sync Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack - Workflow Crashed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
